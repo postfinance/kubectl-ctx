@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -28,6 +29,7 @@ type CtxOptions struct {
 	args        []string
 
 	userSpecifiedContext string
+	availableContexts    []string // contains a sorted list of all contexts
 
 	genericclioptions.IOStreams
 }
@@ -77,6 +79,11 @@ func (o *CtxOptions) Complete(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	for ctx := range o.rawConfig.Contexts {
+		o.availableContexts = append(o.availableContexts, ctx)
+	}
+	sort.Strings(o.availableContexts)
 
 	return nil
 }
@@ -130,11 +137,11 @@ func (o *CtxOptions) changeCurrentCtx() error {
 // in red
 func (o *CtxOptions) printContexts() {
 	red := color.New(color.FgRed)
-	for cluster := range o.rawConfig.Clusters {
-		if cluster == o.rawConfig.CurrentContext {
-			red.Fprintf(o.Out, "%s\n", cluster)
+	for _, ctx := range o.availableContexts {
+		if ctx == o.rawConfig.CurrentContext {
+			red.Fprintf(o.Out, "%s\n", ctx)
 		} else {
-			fmt.Fprintf(o.Out, "%s\n", cluster)
+			fmt.Fprintf(o.Out, "%s\n", ctx)
 		}
 	}
 }
