@@ -1,0 +1,27 @@
+before:
+  hooks:
+    - go mod download
+builds:
+- env:
+  - CGO_ENABLED=0
+  goos:
+    - windows
+    - linux
+    - darwin
+  goarch:
+    - amd64
+archive:
+  format: zip
+  name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+  replacements:
+    amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
