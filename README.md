@@ -1,6 +1,6 @@
-[![Release](https://img.shields.io/github/release/postfinance/kubectl-vault_sync.svg?style=for-the-badge)](https://github.com/postfinance/kubectl-ctx/releases/latest)
+[![Release](https://img.shields.io/github/release/postfinance/kubectl-ctx.svg?style=for-the-badge)](https://github.com/postfinance/kubectl-ctx/releases/latest)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=for-the-badge)](/LICENSE.md)
-[![Go Report Card](https://img.shields.io/badge/GOREPORT-A%2B-brightgreen.svg?style=for-the-badge)](https://goreportcard.com/badge/github.com/postfinance/kubectl-ctx)
+[![Go Report Card](https://img.shields.io/badge/GOREPORT-A%2B-brightgreen.svg?style=for-the-badge)](https://goreportcard.com/report/github.com/postfinance/kubectl-ctx)
 # kubectl ctx plugin
 Simple Plugin to display/change the current kube context in your KUBECONFIG.
 
