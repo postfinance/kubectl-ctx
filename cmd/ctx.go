@@ -3,12 +3,13 @@ package cmd
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
 var (
@@ -25,7 +26,7 @@ var (
 // in a user's KUBECONFIG
 type CtxOptions struct {
 	configFlags *genericclioptions.ConfigFlags
-	rawConfig   api.Config
+	rawConfig   clientcmdapi.Config
 	args        []string
 
 	userSpecifiedContext string
@@ -37,7 +38,7 @@ type CtxOptions struct {
 // NewCtxOptions provides an instance of CtxOptions with default values
 func NewCtxOptions(streams genericclioptions.IOStreams) *CtxOptions {
 	return &CtxOptions{
-		configFlags: genericclioptions.NewConfigFlags(),
+		configFlags: genericclioptions.NewConfigFlags(true),
 		IOStreams:   streams,
 	}
 }
@@ -55,16 +56,10 @@ func NewCtxCmd(streams genericclioptions.IOStreams) *cobra.Command {
 			if err := opt.Complete(c, args); err != nil {
 				return err
 			}
-
 			if err := opt.Validate(); err != nil {
 				return err
 			}
-
-			if err := opt.Run(); err != nil {
-				return err
-			}
-
-			return nil
+			return opt.Run()
 		},
 	}
 	return cmd
@@ -101,45 +96,50 @@ func (o *CtxOptions) Validate() error {
 	return nil
 }
 
-// Run lists all available contexts in a user's KUBECONFIG or updates the current
-// context if the user passed one.
+// Run lists all available contexts in a user's KUBECONFIG or updates the curren context if
+// the user passed one.
 func (o *CtxOptions) Run() error {
-	if len(o.userSpecifiedContext) > 0 {
-		if err := o.changeCurrentCtx(); err != nil {
-			return err
+	selected := []string{}
+	for _, ctx := range o.availableContexts {
+		if ctx == o.userSpecifiedContext {
+			selected = []string{ctx}
+			break
 		}
-	} else {
-		o.printContexts()
+		if strings.Contains(ctx, o.userSpecifiedContext) {
+			selected = append(selected, ctx)
+		}
 	}
-	return nil
+
+	switch len(selected) {
+	case 0:
+		return fmt.Errorf("can't change context to %q, context not found in KUBECONFIG", o.userSpecifiedContext)
+	case 1:
+		return o.changeCurrentCtx(selected[0])
+	default:
+		o.printContexts(selected)
+		return nil
+	}
 }
 
-func (o *CtxOptions) changeCurrentCtx() error {
+func (o *CtxOptions) changeCurrentCtx(newCtx string) error {
 	currentCtx := o.rawConfig.CurrentContext
-	newCtx := o.userSpecifiedContext
-
-	// check if the user provided context exists
-	if _, ok := o.rawConfig.Contexts[newCtx]; !ok {
-		return fmt.Errorf("can't change context to \"%s\", context not found in KUBECONFIG", newCtx)
-	}
-
 	if currentCtx != newCtx {
 		o.rawConfig.CurrentContext = newCtx
 		if err := clientcmd.ModifyConfig(clientcmd.NewDefaultPathOptions(), o.rawConfig, true); err != nil {
 			return err
 		}
-		fmt.Fprintf(o.Out, "current context set to \"%s\"\n", newCtx)
+		fmt.Fprintf(o.Out, "current context set to %q\n", newCtx)
 	}
 	return nil
 }
 
-// prints each context in a user's KUBECONFIG, the current context is printed
-// in red
-func (o *CtxOptions) printContexts() {
+// prints each context in a user's KUBECONFIG, the current context is printed in red.
+func (o *CtxOptions) printContexts(contexts []string) {
 	red := color.New(color.FgRed)
-	for _, ctx := range o.availableContexts {
-		if ctx == o.rawConfig.CurrentContext {
-			red.Fprintf(o.Out, "%s\n", ctx)
+	currentCtx := o.rawConfig.CurrentContext
+	for _, ctx := range contexts {
+		if ctx == currentCtx {
+			red.Fprintf(o.Out, "%s\n", currentCtx)
 		} else {
 			fmt.Fprintf(o.Out, "%s\n", ctx)
 		}
