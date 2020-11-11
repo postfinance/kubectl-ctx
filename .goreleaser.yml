@@ -1,6 +1,3 @@
-before:
-  hooks:
-    - go mod download
 builds:
 - env:
   - CGO_ENABLED=0
@@ -10,11 +7,12 @@ builds:
     - darwin
   goarch:
     - amd64
-archive:
-  format: zip
-  name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-  replacements:
-    amd64: x86_64
+archives:
+  -
+    format: zip
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    replacements:
+      amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
 snapshot:
